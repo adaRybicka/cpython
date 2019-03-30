@@ -118,7 +118,6 @@ class LoaderTest(unittest.TestCase):
     @unittest.skipUnless(os.name == "nt",
                          'test specific to Windows')
     def test_load_dll_with_flags(self):
-        import nt
         _sqlite3 = test.support.import_module("_sqlite3")
         src = _sqlite3.__file__
         if src.lower().endswith("_d.pyd"):
