@@ -118,6 +118,7 @@ class LoaderTest(unittest.TestCase):
     @unittest.skipUnless(os.name == "nt",
                          'test specific to Windows')
     def test_load_dll_with_flags(self):
+        import nt
         _sqlite3 = test.support.import_module("_sqlite3")
         src = _sqlite3.__file__
         if src.lower().endswith("_d.pyd"):
@@ -139,8 +140,12 @@ class LoaderTest(unittest.TestCase):
                 with self.subTest(command):
                     subprocess.check_output(
                         [sys.executable, "-c",
-                         "from ctypes import *; import nt;" + command],
-                        cwd=tmp
+                         "; ".join([
+                            "import nt",
+                            "nt.chdir({!r})".format(tmp),
+                            "from ctypes import *",
+                            command
+                        ])]
                     )
 
             def should_fail(command):
@@ -148,8 +153,12 @@ class LoaderTest(unittest.TestCase):
                     with self.assertRaises(subprocess.CalledProcessError):
                         subprocess.check_output(
                             [sys.executable, "-c",
-                             "from ctypes import *; import nt;" + command],
-                            cwd=tmp, stderr=subprocess.STDOUT,
+                             "; ".join([
+                                "import nt",
+                                "nt.chdir({!r})".format(tmp),
+                                "from ctypes import *",
+                                command
+                            ])], stderr=subprocess.STDOUT,
                         )
 
             # Default load should not find this in CWD
@@ -162,11 +171,11 @@ class LoaderTest(unittest.TestCase):
             should_pass("WinDLL('_sqlite3.dll', winmode=0)")
 
             # Full path load without DLL_LOAD_DIR shouldn't find dependency
-            should_fail("WinDLL(nt._getfullpathname('_sqlite3.dll'), " +
+            should_fail("WinDLL({!r}, ".format(target) +
                         "winmode=nt._LOAD_LIBRARY_SEARCH_SYSTEM32)")
 
             # Full path load with DLL_LOAD_DIR should succeed
-            should_pass("WinDLL(nt._getfullpathname('_sqlite3.dll'), " +
+            should_pass("WinDLL({!r}, ".format(target) +
                         "winmode=nt._LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR)")
 
             # User-specified directory should succeed
